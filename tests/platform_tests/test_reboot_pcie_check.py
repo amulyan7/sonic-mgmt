@@ -29,7 +29,7 @@ pytestmark = [
 logger = logging.getLogger(__name__)
 
 
-def try_create_dut_console(duthost, localhost, conn_graph_facts, creds):
+def try_create_dut_console(duthost, localhost, conn_graph_facts, creds):     # noqa: F811
     """
     Attempt to create a console connection to the DUT.
     
@@ -57,7 +57,7 @@ def collect_console_log(duthost, localhost):
     @return: Console connection object or None
     """
     creds = creds_on_dut(duthost)
-    conn_graph_facts = get_graph_facts(duthost, localhost, [duthost.hostname])
+    conn_graph_facts = get_graph_facts(duthost, localhost, [duthost.hostname])     # noqa: F811
     dut_console = try_create_dut_console(duthost, localhost, conn_graph_facts, creds)
     
     if dut_console:
@@ -66,6 +66,7 @@ def collect_console_log(duthost, localhost):
     else:
         logger.warning("Console connection not available, cannot collect logs")
         return None
+
 
 def check_console_for_pcie_errors(console_output):
     """
@@ -134,7 +135,7 @@ def check_syslog_for_pcie_errors(duthost, reboot_time):
 
 
 def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
-                                 localhost, conn_graph_facts):      # noqa: F811
+                                localhost, conn_graph_facts):      # noqa: F811
     """
     Test case to perform cold reboot and verify no PCIe Bus Errors occur.
     
@@ -187,7 +188,10 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
             console_error_lines = check_console_for_pcie_errors(console_output)
             if console_error_lines:
                 logger.error("PCIe Bus Error detected in console output!")
-                pytest_assert(False, "PCIe Bus Error detected in console during cold reboot!\nError details:\n%s" % '\n'.join(console_error_lines))
+                pytest_assert(
+                    False,
+                    "PCIe Bus Error detected in console during cold reboot!\n"
+                    "Error details:\n%s" % '\n'.join(console_error_lines))
             else:
                 logger.info("No PCIe Bus Error found in console output")
         except Exception as console_err:
@@ -196,7 +200,10 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
         syslog_error_lines = check_syslog_for_pcie_errors(duthost, dut_reboot_time)
         if syslog_error_lines:
             logger.error("PCIe Bus Error detected in syslog!")
-            pytest_assert(False, "PCIe Bus Error detected in syslog during cold reboot!\nError details:\n%s" % '\n'.join(syslog_error_lines))
+            pytest_assert(
+                False,
+                "PCIe Bus Error detected in syslog during cold reboot!\n"
+                "Error details:\n%s" % '\n'.join(syslog_error_lines))
         else:
             logger.info("No PCIe Bus Error found in syslog")
     finally:
