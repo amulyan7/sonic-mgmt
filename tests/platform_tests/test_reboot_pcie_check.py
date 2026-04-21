@@ -96,7 +96,7 @@ def check_syslog_for_pcie_errors(duthost, reboot_time):
     @return: List of lines containing PCIe Bus Error (empty list if none found)
     """
     remote_syslog = "/var/log/syslog"
-    local_syslog = "/tmp/syslog"
+    local_syslog = "/tmp/syslog_%s" % duthost.hostname
     logger.info("Checking %s for PCIe Bus Errors", remote_syslog)
     try:
         duthost.fetch(src=remote_syslog, dest=local_syslog, flat=True)
@@ -165,38 +165,40 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
 
     if not dut_console:
         pytest.skip("Skipping the test as console connection is not available")
-    dut_reboot_time = duthost.command("date +'%Y-%m-%d %H:%M:%S'")["stdout"].strip()
-    logger.info("DUT time before reboot: %s", dut_reboot_time)
-    dut_reboot_time = time.strptime(dut_reboot_time, "%Y-%m-%d %H:%M:%S")
-
-    logger.info("Performing cold reboot on %s", hostname)
-    reboot_res, dut_datetime = perform_reboot(duthost, pool, reboot_ctrl['command'], reboot_type=REBOOT_TYPE_COLD)
-        
-    logger.info("Waiting for %s to shutdown", hostname)
-    wait_for_shutdown(duthost, localhost, delay=10, timeout=timeout, reboot_res=reboot_res)
-        
-    logger.info("Waiting for %s to startup", hostname)
-    wait_for_startup(duthost, localhost, delay=10, timeout=timeout)
-
-    wait_critical_processes(duthost)
 
     try:
-        console_output = dut_console.read_channel()
-        console_error_lines = check_console_for_pcie_errors(console_output)
-        if console_error_lines:
-            logger.error("PCIe Bus Error detected in console output!")
-            pytest_assert(False, "PCIe Bus Error detected in console during cold reboot!\nError details:\n%s" % '\n'.join(console_error_lines))
+        dut_reboot_time = duthost.command("date +'%Y-%m-%d %H:%M:%S'")["stdout"].strip()
+        logger.info("DUT time before reboot: %s", dut_reboot_time)
+        dut_reboot_time = time.strptime(dut_reboot_time, "%Y-%m-%d %H:%M:%S")
+
+        logger.info("Performing cold reboot on %s", hostname)
+        reboot_res, dut_datetime = perform_reboot(duthost, pool, reboot_ctrl['command'], reboot_type=REBOOT_TYPE_COLD)
+
+        logger.info("Waiting for %s to shutdown", hostname)
+        wait_for_shutdown(duthost, localhost, delay=10, timeout=timeout, reboot_res=reboot_res)
+
+        logger.info("Waiting for %s to startup", hostname)
+        wait_for_startup(duthost, localhost, delay=10, timeout=timeout)
+
+        wait_critical_processes(duthost)
+
+        try:
+            console_output = dut_console.read_channel()
+            console_error_lines = check_console_for_pcie_errors(console_output)
+            if console_error_lines:
+                logger.error("PCIe Bus Error detected in console output!")
+                pytest_assert(False, "PCIe Bus Error detected in console during cold reboot!\nError details:\n%s" % '\n'.join(console_error_lines))
+            else:
+                logger.info("No PCIe Bus Error found in console output")
+        except Exception as console_err:
+            pytest_assert(False, "Failed to read console log: %s" % console_err)
+
+        syslog_error_lines = check_syslog_for_pcie_errors(duthost, dut_reboot_time)
+        if syslog_error_lines:
+            logger.error("PCIe Bus Error detected in syslog!")
+            pytest_assert(False, "PCIe Bus Error detected in syslog during cold reboot!\nError details:\n%s" % '\n'.join(syslog_error_lines))
         else:
-            logger.info("No PCIe Bus Error found in console output")
-    except Exception as console_err:
-        logger.warning("Failed to get console log: %s", console_err)
-
-    syslog_error_lines = check_syslog_for_pcie_errors(duthost, dut_reboot_time)
-    if syslog_error_lines:
-        logger.error("PCIe Bus Error detected in syslog!")
-        pytest_assert(False, "PCIe Bus Error detected in syslog during cold reboot!\nError details:\n%s" % '\n'.join(syslog_error_lines))
-    else:
-        logger.info("No PCIe Bus Error found in syslog")
-
-    dut_console.disconnect()
-    pool.terminate()
+            logger.info("No PCIe Bus Error found in syslog")
+    finally:
+        dut_console.disconnect()
+        pool.terminate()
