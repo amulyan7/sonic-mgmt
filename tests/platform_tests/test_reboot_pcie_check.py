@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 def try_create_dut_console(duthost, localhost, conn_graph_facts, creds):     # noqa: F811
     """
     Attempt to create a console connection to the DUT.
-    
+
     @param duthost: The AnsibleHost object of DUT
     @param localhost: The Localhost object
     @param conn_graph_facts: Connection graph facts
@@ -51,7 +51,7 @@ def try_create_dut_console(duthost, localhost, conn_graph_facts, creds):     # n
 def collect_console_log(duthost, localhost):
     """
     Establish console connection and keep it active during reboot to collect logs.
-    
+
     @param duthost: The AnsibleHost object of DUT
     @param localhost: The Localhost object
     @return: Console connection object or None
@@ -59,7 +59,7 @@ def collect_console_log(duthost, localhost):
     creds = creds_on_dut(duthost)
     conn_graph_facts = get_graph_facts(duthost, localhost, [duthost.hostname])     # noqa: F811
     dut_console = try_create_dut_console(duthost, localhost, conn_graph_facts, creds)
-    
+
     if dut_console:
         logger.info("Console connection established for log collection")
         return dut_console
@@ -71,14 +71,14 @@ def collect_console_log(duthost, localhost):
 def check_console_for_pcie_errors(console_output):
     """
     Check if PCIe Bus Error is present in console output.
-    
+
     @param console_output: String containing console logs
     @return: List of lines containing PCIe Bus Error (empty list if none found)
     """
     if not console_output:
         logger.warning("No console output available to check")
         return []
-    
+
     logger.info("Checking console output for PCIe Bus Errors")
 
     # Split console output and extract all lines with PCIe Bus Error
@@ -138,7 +138,7 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
                                 localhost, conn_graph_facts):      # noqa: F811
     """
     Test case to perform cold reboot and verify no PCIe Bus Errors occur.
-    
+
     @param duthosts: Fixture for DUT hosts
     @param enum_rand_one_per_hwsku_hostname: Fixture to select one DUT
     @param localhost: The Localhost object
@@ -146,7 +146,7 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
     """
     duthost = duthosts[enum_rand_one_per_hwsku_hostname]
     hostname = duthost.hostname
-    
+
     pool = ThreadPool()
     reboot_ctrl = reboot_ctrl_dict[REBOOT_TYPE_COLD]
     timeout = reboot_ctrl['timeout']
