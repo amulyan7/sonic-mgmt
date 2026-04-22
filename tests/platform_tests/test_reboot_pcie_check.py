@@ -104,6 +104,7 @@ def check_syslog_for_pcie_errors(duthost, reboot_time):
     except Exception as err:
         pytest_assert(False, "Failed to fetch syslog from DUT: %s" % err)
 
+    lines = []
     try:
         with open(local_syslog) as f:
             lines = f.readlines()
@@ -167,6 +168,7 @@ def test_cold_reboot_pcie_check(duthosts, enum_rand_one_per_hwsku_hostname,
     if not dut_console:
         pytest.skip("Skipping the test as console connection is not available")
 
+    reboot_res = None
     try:
         dut_reboot_time = duthost.command("date +'%Y-%m-%d %H:%M:%S'")["stdout"].strip()
         logger.info("DUT time before reboot: %s", dut_reboot_time)
